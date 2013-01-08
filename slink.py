@@ -97,10 +97,10 @@ class slinky(object):
         ten = 0.0
         #ten from turn above
         if(i != 0) and (self.__collapsed[i-1] == False):
-            ten += (self.__k/self.__m)*(self.gety(i-1) - self.gety(i))
+            ten += self.__k*(self.gety(i-1) - self.gety(i))
         #ten from turn below
         if(i != (self.__N - 1)) and (self.__collapsed[i] == False):
-            ten += (self.__k/self.__m)*(self.gety(i+1) - self.gety(i))
+            ten += self.__k*(self.gety(i+1) - self.gety(i))
         return ten
     
     #get the overall acceleration on a turn, actually the
@@ -118,7 +118,7 @@ class slinky(object):
         #if the turn is the reference turn for the bottom collapsed section, include mg and inertial mass for all turns below
         elif(i == self.__bottomcolT):
             f -= self.__m*self.__g*(self.__N - self.__bottomcolT)
-            a = f/((self.__N -1 - self.__bottomcolT)*self.__m)
+            a = f/((self.__N - self.__bottomcolT)*self.__m)
         return a
 
     #central difference integrator
@@ -224,8 +224,8 @@ dt = 0.001
 endt = 20.0
 imgs = 200
 m = 1.0
-k = 1.0
-g = 5.0
+k = 2.0
+g = 1.0
 t = dt
 imgEvery = (endt/(dt*imgs))
 ctr = 0
