@@ -1,8 +1,7 @@
 //jslinky - No copyright, do what you will with me!
 
 
-function canvas_arrow(context, fromx, fromy, tox, toy){
-    var headlen = 10;   // length of head in pixels
+function canvas_arrow(context, fromx, fromy, tox, toy,headlen){
     var angle = Math.atan2(toy-fromy,tox-fromx);
     context.moveTo(fromx, fromy);
     context.lineTo(tox, toy);
@@ -37,10 +36,10 @@ function Slinky(N, l0, l1, k, g, m) {
         var nt = 0.0;
         if (dy > l1){
             nt = this._y[i-1] + dy;
-            this.collapsed.push(false);
+            this.collapsed[i-1] = false;
         }else{
             nt = false;
-            this.collapsed.push(true);
+            this.collapsed[i-1] = true;
 
             if ((i-1) < this.bottomcolT){
                 this.bottomcolT = (i-1);
@@ -49,6 +48,7 @@ function Slinky(N, l0, l1, k, g, m) {
         }
         this._y[i] = nt;
     }
+    this.ylast = new Array();
 }
 
 //Slinky Functions ***************************
@@ -71,7 +71,7 @@ Slinky.prototype.getYArray = function(){
 Slinky.prototype.ten = function(turn, ud){
     ten = 0.0
     //ten from above
-    if( (ud & 1) && (turn != 0 ) && (this.collapsed[i-1] == false) ){
+    if( (ud & 1) && (turn != 0 ) && (this.collapsed[turn-1] == false) ){
         ten += this.k*(this.y(turn-1) - this.y(turn));
     }
     if( (ud & 2) && (turn != (this.N - 1)) && (this.collapsed[turn] == false) ){
@@ -80,11 +80,11 @@ Slinky.prototype.ten = function(turn, ud){
     return ten;
 };
 Slinky.prototype.accel = function(turn){
-    f = self.ten(turn,3);
-
-    if( (this.collapsed[turn-1] == false) &&
-        ( ( turn == this.collapsed.length() )
-        || ( this.collapsed[turn] == false) ) ){
+    f = this.ten(turn,3);
+    /*if( (this.collapsed[turn-1] == false) &&
+        ( ( turn == this.collapsed.length )
+        || ( this.collapsed[turn] == false) ) ){*/
+    if((turn > this.topcolT) && ( turn < this.bottomcolT)){
            f -= this.m*this.g;
            return (f/this.m);
         }
@@ -94,8 +94,6 @@ Slinky.prototype.accel = function(turn){
     } else if(turn == this.bottomcolT){
         f -= this.m*this.g*(this.N - this.bottomcolT);
         return (f/(this.m*(this.N - this.bottomcolT)));
-    } else {
-        alert('Shouldn\'t have made it here');
     }
 };
 Slinky.prototype.com = function(){
@@ -105,7 +103,25 @@ Slinky.prototype.com = function(){
     }
     return (sum/(this.m*this.N));
 };
-
+Slinky.prototype.advance = function(dt){
+    if(this.ylast.length != this.N){
+        this.ylast = this.getYArray().slice();
+    }
+    var ynext = new Array(this.N);
+    var old = this.getYArray();
+    
+    //integrate to prospective new positions
+    for(var i=0; i < this.N; i++){
+        ynext[i] = (2.0*this.y(i) - this.ylast[i] + dt*dt*this.accel(i));
+    }
+    
+    //enforce mmt conservation
+    for(var i=0; i < this.N; i++){
+        if( (i >= this.topcolT) && (i < this.bottomcolT)){
+        
+        }
+    }
+}
 Slinky.prototype.draw = function(canvas){
     var ctx = canvas.getContext('2d');
     var cwidth = canvas.width;
@@ -135,7 +151,14 @@ Slinky.prototype.draw = function(canvas){
     ctx.stroke();
     
     //draw force arrows
-    this.getYArray
+    ctx.strokeStyle = 'brown';
+    ctx.beginPath();
+    ypos.forEach(function(el,ind,ar){
+        if(this.ten(ind,3)){
+            canvas_arrow(ctx,center,el,center,el+this.ten(ind,3),5);
+        }
+    },this);
+    ctx.stroke();
     
     //draw com
     var com = this.com();
@@ -147,6 +170,13 @@ Slinky.prototype.draw = function(canvas){
     ctx.lineTo(center,com-2);
     ctx.stroke();
     ctx.fillText('CoM',r*1.1, com)
+    
+    sum = 0.0;
+    ypos.forEach(function(el,ind,ar){
+        sum += this.accel(ind);
+    },this);
+    
+    //ctx.fillText(sum.toString(),r*1.3, com);
 
 };
 
